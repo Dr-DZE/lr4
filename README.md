@@ -5,4 +5,5 @@
 Программа расчитавает калорийность продуктов из полученного списка и ещё немного
 Использовал PostgreSQL
 
-![image](https://github.com/user-attachments/assets/ec873bb7-8689-4875-b834-4ef11a2ff27d)
+![image](https://github.com/user-attachments/assets/bb484bbb-3624-496f-a7c0-c1cd1b66bdab)
+
