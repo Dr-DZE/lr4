@@ -22,8 +22,6 @@ import com.example.tryme.services.ProductService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -34,8 +32,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "MealProduct API", description = "API для управления связями 'продукт в блюде'")
 public class MealProductController {
     private final MealProductService mealProductService;
-    private final MealService mealService; 
-    private final ProductService productService; 
+    private final MealService mealService;
+    private final ProductService productService;
 
     @Autowired
     public MealProductController(MealProductService mealProductService,
@@ -48,31 +46,27 @@ public class MealProductController {
 
     @Operation(summary = "Создать новую запись о продукте в блюде")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "Запись успешно создана",
-                    content = @Content(mediaType = "application/json", schema = @Schema(type = "string"))),
+            @ApiResponse(responseCode = "201", description = "Запись успешно создана"),
             @ApiResponse(responseCode = "400", description = "Некорректные параметры (ID, граммы)", ref = "#/components/responses/BadRequest"),
-            @ApiResponse(responseCode = "404", description = "Блюдо или продукт не найдены", ref = "#/components/responses/NotFound"),
-            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера", ref = "#/components/responses/InternalServerError")
+            @ApiResponse(responseCode = "404", description = "Блюдо или продукт не найдены", ref = "#/components/responses/NotFound")
     })
     @PostMapping("/create")
     public ResponseEntity<String> createMealProduct(
             @Parameter(description = "Вес продукта в граммах", required = true, example = "150") @RequestParam Integer grams,
             @Parameter(description = "ID блюда", required = true, example = "1") @RequestParam Long mealId,
-            @Parameter(description = "ID продукта", required = true, example = "1") @RequestParam Long productId) { 
-        if (grams <= 0) {
-            throw new BadRequestException("Grams must be a positive value.");
+            @Parameter(description = "ID продукта", required = true, example = "1") @RequestParam Long productId) {
+        if (grams == null || grams <= 0) { 
+            throw new BadRequestException("Параметр 'grams' должен быть указан и быть положительным числом.");
         }
-        
+
         String message = mealProductService.createMealProduct(grams, mealId, productId, mealService, productService);
         return ResponseEntity.status(HttpStatus.CREATED).body(message);
     }
 
     @Operation(summary = "Получить запись о продукте в блюде по ID")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Запись найдена",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = MealProduct.class))),
-            @ApiResponse(responseCode = "404", description = "Запись не найдена", ref = "#/components/responses/NotFound"),
-            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера", ref = "#/components/responses/InternalServerError")
+            @ApiResponse(responseCode = "200", description = "Запись найдена"),
+            @ApiResponse(responseCode = "404", description = "Запись не найдена", ref = "#/components/responses/NotFound")
     })
     @GetMapping("/{id}")
     public ResponseEntity<MealProduct> getMealProduct(
@@ -82,28 +76,24 @@ public class MealProductController {
 
     @Operation(summary = "Обновить вес продукта в блюде")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Вес успешно обновлен",
-                    content = @Content(mediaType = "application/json", schema = @Schema(type = "string"))),
+            @ApiResponse(responseCode = "200", description = "Вес успешно обновлен"),
             @ApiResponse(responseCode = "400", description = "Некорректное значение веса", ref = "#/components/responses/BadRequest"),
-            @ApiResponse(responseCode = "404", description = "Запись для обновления не найдена", ref = "#/components/responses/NotFound"),
-            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера", ref = "#/components/responses/InternalServerError")
+            @ApiResponse(responseCode = "404", description = "Запись для обновления не найдена", ref = "#/components/responses/NotFound")
     })
     @PutMapping("/update/{id}")
     public ResponseEntity<String> updateMealProduct(
             @Parameter(description = "ID записи для обновления", required = true, example = "1") @PathVariable Long id,
             @Parameter(description = "Новый вес продукта в граммах", required = true, example = "200") @RequestParam Integer grams) {
-        if (grams <= 0) {
-            throw new BadRequestException("Grams must be a positive value.");
+        if (grams == null || grams <= 0) { 
+            throw new BadRequestException("Параметр 'grams' должен быть указан и быть положительным числом.");
         }
         return ResponseEntity.ok(mealProductService.updateMealProduct(id, grams));
     }
 
     @Operation(summary = "Удалить запись о продукте в блюде по ID")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Запись успешно удалена",
-                    content = @Content(mediaType = "application/json", schema = @Schema(type = "string"))),
-            @ApiResponse(responseCode = "404", description = "Запись для удаления не найдена", ref = "#/components/responses/NotFound"),
-            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера", ref = "#/components/responses/InternalServerError")
+            @ApiResponse(responseCode = "200", description = "Запись успешно удалена"),
+            @ApiResponse(responseCode = "404", description = "Запись для удаления не найдена", ref = "#/components/responses/NotFound")
     })
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<String> deleteMealProduct(
@@ -113,9 +103,7 @@ public class MealProductController {
 
     @Operation(summary = "Получить все записи о продуктах в блюдах")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Список всех записей",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = List.class, subTypes = {MealProduct.class}))),
-            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера", ref = "#/components/responses/InternalServerError")
+            @ApiResponse(responseCode = "200", description = "Список всех записей")
     })
     @GetMapping("/")
     public ResponseEntity<List<MealProduct>> getAllMealProducts() {

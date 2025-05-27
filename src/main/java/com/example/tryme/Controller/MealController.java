@@ -20,12 +20,9 @@ import com.example.tryme.services.MealService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-
 
 @RestController
 @RequestMapping("/meals")
@@ -40,32 +37,28 @@ public class MealController {
 
     @Operation(summary = "Получить блюда по названию продукта", description = "Возвращает список блюд, содержащих указанный продукт.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Успешный ответ",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = List.class, subTypes = {Meal.class}))),
-            @ApiResponse(responseCode = "400", description = "Некорректный запрос (например, пустое имя продукта)", ref = "#/components/responses/BadRequest"),
-            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера", ref = "#/components/responses/InternalServerError")
+            @ApiResponse(responseCode = "200", description = "Успешный ответ"),
+            @ApiResponse(responseCode = "400", description = "Некорректный запрос (например, пустое имя продукта)", ref = "#/components/responses/BadRequest")
     })
     @GetMapping("/by-product")
     public ResponseEntity<List<Meal>> getMealsByProduct(
             @Parameter(description = "Название продукта для поиска", required = true, example = "Chicken") @RequestParam String productName) {
         if (productName == null || productName.trim().isEmpty()) {
-            throw new BadRequestException("Product name cannot be empty."); 
+            throw new BadRequestException("Параметр 'productName' не может быть пустым.");
         }
         return ResponseEntity.ok(mealService.findMealsByProductName(productName));
     }
 
     @Operation(summary = "Создать новое блюдо")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "Блюдо успешно создано",
-                    content = @Content(mediaType = "application/json", schema = @Schema(type = "string"))),
-            @ApiResponse(responseCode = "400", description = "Некорректное имя блюда", ref = "#/components/responses/BadRequest"),
-            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера", ref = "#/components/responses/InternalServerError")
+            @ApiResponse(responseCode = "201", description = "Блюдо успешно создано"),
+            @ApiResponse(responseCode = "400", description = "Некорректное имя блюда", ref = "#/components/responses/BadRequest")
     })
     @PostMapping("/create")
     public ResponseEntity<String> createMeal(
             @Parameter(description = "Название нового блюда", required = true, example = "Pasta Carbonara") @RequestParam String mealName) {
         if (mealName == null || mealName.trim().isEmpty()) {
-            throw new BadRequestException("Meal name cannot be empty.");
+            throw new BadRequestException("Параметр 'mealName' не может быть пустым.");
         }
         String message = mealService.createMeal(mealName);
         return ResponseEntity.status(HttpStatus.CREATED).body(message);
@@ -73,41 +66,36 @@ public class MealController {
 
     @Operation(summary = "Получить блюдо по ID")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Блюдо найдено",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = Meal.class))),
-            @ApiResponse(responseCode = "404", description = "Блюдо не найдено", ref = "#/components/responses/NotFound"),
-            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера", ref = "#/components/responses/InternalServerError")
+            @ApiResponse(responseCode = "200", description = "Блюдо найдено"),
+            @ApiResponse(responseCode = "404", description = "Блюдо не найдено", ref = "#/components/responses/NotFound")
     })
     @GetMapping("/{id}")
     public ResponseEntity<Meal> getMeal(
             @Parameter(description = "ID блюда", required = true, example = "1") @PathVariable Long id) {
+    
         return ResponseEntity.ok(mealService.getMeal(id));
     }
 
     @Operation(summary = "Обновить существующее блюдо")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Блюдо успешно обновлено",
-                    content = @Content(mediaType = "application/json", schema = @Schema(type = "string"))),
+            @ApiResponse(responseCode = "200", description = "Блюдо успешно обновлено"),
             @ApiResponse(responseCode = "400", description = "Некорректное новое имя блюда", ref = "#/components/responses/BadRequest"),
-            @ApiResponse(responseCode = "404", description = "Блюдо для обновления не найдено", ref = "#/components/responses/NotFound"),
-            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера", ref = "#/components/responses/InternalServerError")
+            @ApiResponse(responseCode = "404", description = "Блюдо для обновления не найдено", ref = "#/components/responses/NotFound")
     })
     @PutMapping("/update/{id}")
     public ResponseEntity<String> updateMeal(
             @Parameter(description = "ID блюда для обновления", required = true, example = "1") @PathVariable Long id,
             @Parameter(description = "Новое название блюда", required = true, example = "Spaghetti Bolognese") @RequestParam String newName) {
         if (newName == null || newName.trim().isEmpty()) {
-            throw new BadRequestException("New meal name cannot be empty."); 
+            throw new BadRequestException("Параметр 'newName' не может быть пустым.");
         }
         return ResponseEntity.ok(mealService.updateMeal(id, newName));
     }
 
     @Operation(summary = "Удалить блюдо по ID")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Блюдо успешно удалено",
-                    content = @Content(mediaType = "application/json", schema = @Schema(type = "string"))),
-            @ApiResponse(responseCode = "404", description = "Блюдо для удаления не найдено", ref = "#/components/responses/NotFound"),
-            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера", ref = "#/components/responses/InternalServerError")
+            @ApiResponse(responseCode = "200", description = "Блюдо успешно удалено"),
+            @ApiResponse(responseCode = "404", description = "Блюдо для удаления не найдено", ref = "#/components/responses/NotFound")
     })
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<String> deleteMeal(
@@ -117,9 +105,7 @@ public class MealController {
 
     @Operation(summary = "Получить все блюда")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Список всех блюд",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = List.class, subTypes = {Meal.class}))),
-            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера", ref = "#/components/responses/InternalServerError")
+            @ApiResponse(responseCode = "200", description = "Список всех блюд")
     })
     @GetMapping("/")
     public ResponseEntity<List<Meal>> getAllMeals() {

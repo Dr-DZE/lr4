@@ -65,10 +65,10 @@ public class CaloriesService {
             return response.getBody();
         } catch (HttpClientErrorException | HttpServerErrorException e) {
             logger.error("Error calling external API for query '{}': {} - {}", query, e.getStatusCode(), e.getResponseBodyAsString(), e);
-            throw new BadRequestException("Error fetching data from external calorie service for query: " + query + ". Status: " + e.getStatusCode(), e);
-        } catch (Exception e) { 
+            throw new BadRequestException("Ошибка при получении данных о калорийности для запроса: " + query + ". Статус: " + e.getStatusCode(), e);
+        } catch (Exception e) {
             logger.error("Unexpected error calling external API for query '{}': {}", query, e.getMessage(), e);
-            throw new RuntimeException("Unexpected error communicating with external calorie service for query: " + query, e);
+            throw new RuntimeException("Непредвиденная ошибка при обращении к внешнему сервису калорийности для запроса: " + query, e);
         }
     }
 
@@ -83,16 +83,16 @@ public class CaloriesService {
         Integer[] caloriesIn100 = new Integer[productCount];
         Integer totalCalories = 0;
 
-      
         Meal meal = new Meal("Meal created on " + new Date().toString());
         mealRepository.save(meal);
 
         for (int i = 0; i < productCount; i++) {
+            
             if (food[i] == null || food[i].trim().isEmpty()) {
-                throw new BadRequestException("Food name at index " + i + " cannot be empty.");
+                throw new BadRequestException("Название продукта (food) по индексу " + i + " не может быть пустым.");
             }
             if (gram[i] == null || gram[i] <= 0) {
-                throw new BadRequestException("Grams for food '" + food[i] + "' must be a positive integer.");
+                throw new BadRequestException("Вес продукта (gram) для '" + food[i] + "' должен быть указан и быть положительным числом.");
             }
             String response = getNameFromWebAndSaveProduct(food[i], caloriesIn100, i);
             String temp = gram[i] + "g." + " " + response;
@@ -101,11 +101,10 @@ public class CaloriesService {
 
             List<Product> products = productRepository.findByNameContainingIgnoreCase(food[i]);
             if (products.isEmpty()) {
-                logger.error("Product {} not found after attempting to save from web.", food[i]);
-                throw new ResourceNotFoundException("Product " + food[i] + " could not be processed and saved.");
+                logger.error("Продукт {} не найден после попытки сохранения из веба.", food[i]);
+                throw new ResourceNotFoundException("Продукт " + food[i] + " не удалось обработать и сохранить.");
             }
             Product product = products.get(0);
-         
             MealProduct mealProduct = new MealProduct(gram[i], meal, product);
             mealProductRepository.save(mealProduct);
         }
@@ -123,13 +122,17 @@ public class CaloriesService {
 
             JsonNode jsonNode = objectMapper.readTree(body);
             if (jsonNode == null || !jsonNode.has("results") || !jsonNode.get("results").isArray() || jsonNode.get("results").isEmpty()) {
-                logger.warn("No results found for query '{}' from external API. Response: {}", query, body);
-                throw new ResourceNotFoundException("Product information not found for: " + query);
+                logger.warn("Для запроса '{}' не найдено результатов от внешнего API. Ответ: {}", query, body);
+                throw new ResourceNotFoundException("Информация о продукте не найдена для: " + query);
             }
             JsonNode match = jsonNode.get("results").get(0);
 
             String productName = match.has("text") ? match.get("text").asText() : query;
             int productCalories = match.has("cal") ? match.get("cal").asInt() : 0;
+
+            if (productName == null || productName.trim().isEmpty()) {
+                throw new BadRequestException("Внешний API вернул пустое имя продукта для запроса: " + query);
+            }
 
             responseText += productName;
             responseText += " / cal/100g: ";
@@ -137,56 +140,56 @@ public class CaloriesService {
             responseText += productCalories;
 
             List<Product> existingProducts = productRepository.findByNameContainingIgnoreCase(productName);
-            Product product; 
+            Product product;
             if (existingProducts.isEmpty()) {
                 product = new Product(productName, productCalories);
                 productRepository.save(product);
-                logger.info("Saved new product: {} with {} cal/100g", productName, productCalories);
+                logger.info("Сохранен новый продукт: {} с {} кал/100г", productName, productCalories);
                 cacheService.clearCache("products");
             } else {
-                product = existingProducts.get(0); 
+                product = existingProducts.get(0);
                 if (!product.getCaloriesPer100g().equals(productCalories)) {
-                    logger.warn("Calorie mismatch for product '{}'. DB: {}, API: {}. Using API value for current calculation.",
+                    logger.warn("Несоответствие калорий для продукта '{}'. БД: {}, API: {}. Используется значение из API.",
                                 productName, product.getCaloriesPer100g(), productCalories);
                 }
             }
             return responseText;
         } catch (JsonProcessingException e) {
-            logger.error("Error processing JSON response for query '{}': {}", query, e.getMessage(), e);
-            throw new BadRequestException("Error processing calorie data for: " + query, e);
-        } catch (ResourceNotFoundException e) { 
-            throw e;
-        } catch (RuntimeException e) { 
-             logger.error("Runtime error in getNameFromWebAndSaveProduct for query '{}': {}", query, e.getMessage(), e);
-             if (e instanceof BadRequestException) throw e; 
-             throw new RuntimeException("Failed to retrieve or save product data for: " + query + " due to an internal error.", e);
-        }
+            logger.error("Ошибка обработки JSON ответа для запроса '{}': {}", query, e.getMessage(), e);
+            throw new BadRequestException("Ошибка обработки данных о калорийности для: " + query, e);
+        } 
     }
 
     public String addProductToMeal(Long mealId, String productName, Integer grams) {
-        if (grams <= 0) {
-            throw new BadRequestException("Grams must be a positive value.");
+        if (mealId == null) {
+            throw new BadRequestException("Параметр 'mealId' не может быть null.");
         }
+        if (productName == null || productName.trim().isEmpty()) {
+            throw new BadRequestException("Параметр 'productName' не может быть пустым.");
+        }
+        if (grams == null || grams <= 0) {
+            throw new BadRequestException("Параметр 'grams' должен быть указан и быть положительным числом.");
+        }
+        
         cacheService.clearCache("meals");
         cacheService.clearCache("mealProducts");
 
         Meal meal = mealRepository.findById(mealId)
-                .orElseThrow(() -> new ResourceNotFoundException("Meal not found with id: " + mealId));
+                .orElseThrow(() -> new ResourceNotFoundException("Блюдо с id: " + mealId + " не найдено."));
 
         List<Product> products = productRepository.findByNameContainingIgnoreCase(productName);
         if (products.isEmpty()) {
-            throw new ResourceNotFoundException("Product not found: " + productName +
-                    ". Please ensure it's added, possibly via CalculateCalories endpoint first.");
+            throw new ResourceNotFoundException("Продукт с именем: " + productName + " не найден. " +
+                    "Пожалуйста, убедитесь, что он добавлен, возможно, через эндпоинт CalculateCalories.");
         }
         Product product = products.get(0);
 
-       
         MealProduct mealProduct = new MealProduct(grams, meal, product);
         mealProductRepository.save(mealProduct);
 
         int calories = product.getCaloriesPer100g() * grams / 100;
 
-        return String.format("Added %dg of %s (%d kcal) to meal '%s'",
+        return String.format("Добавлено %dg продукта %s (%d ккал) в блюдо '%s'",
                 grams, product.getName(), calories, meal.getName());
     }
 }

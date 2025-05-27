@@ -21,8 +21,6 @@ import com.example.tryme.services.ProductService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -45,22 +43,43 @@ public class ProductController {
     @Operation(summary = "Рассчитать калории для набора продуктов",
             description = "Рассчитывает общую калорийность на основе списка продуктов и их веса. Также добавляет продукты в базу данных, если их там нет.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Расчет калорий выполнен",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = List.class, subTypes = {String.class}))),
-            @ApiResponse(responseCode = "400", description = "Некорректные входные данные (например, количество продуктов не соответствует массивам)", ref = "#/components/responses/BadRequest"),
-            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера", ref = "#/components/responses/InternalServerError")
+            @ApiResponse(responseCode = "200", description = "Расчет калорий выполнен"),
+            @ApiResponse(responseCode = "400", description = "Некорректные входные данные", ref = "#/components/responses/BadRequest")
     })
     @GetMapping("/CalculateCalories")
     public ResponseEntity<List<String>> calculateCalories(
-            @Parameter(description = "Количество продуктов для расчета", required = true, example = "2") @RequestParam Integer productCount,
-            @Parameter(description = "Массив названий продуктов", required = true, example = "[\"Chicken Breast\", \"Broccoli\"]") @RequestParam String[] food,
-            @Parameter(description = "Массив веса продуктов в граммах", required = true, example = "[150, 100]") @RequestParam Integer[] gram) {
-        if (productCount <= 0 || food.length != productCount || gram.length != productCount) {
-            throw new BadRequestException("Product count must match the length of food and gram arrays and be positive."); 
+            @Parameter(description = "Количество продуктов для расчета.", example = "2")
+            @RequestParam(required = false) Integer productCount,
+            
+            @Parameter(description = "Массив названий продуктов.", example = "[\"Chicken Breast\", \"Broccoli\"]")
+            @RequestParam(required = false) String[] food,
+            
+            @Parameter(description = "Массив веса продуктов в граммах.", example = "[150, 100]")
+            @RequestParam(required = false) Integer[] gram) {
+
+        if (productCount == null || food == null || gram == null) {
+            StringBuilder missingParams = new StringBuilder("Не указаны обязательные параметры: ");
+            if (productCount == null) missingParams.append("productCount; ");
+            if (food == null) missingParams.append("food; ");
+            if (gram == null) missingParams.append("gram; ");
+            throw new BadRequestException(missingParams.toString().trim());
         }
-        for (Integer g : gram) {
-            if (g <= 0) {
-                throw new BadRequestException("Grams for each food item must be positive."); 
+
+        if (productCount <= 0) {
+            throw new BadRequestException("Параметр 'productCount' должен быть положительным числом.");
+        }
+        if (food.length != productCount || gram.length != productCount) {
+             throw new BadRequestException("Длины массивов 'food' и 'gram' должны соответствовать значению 'productCount'.");
+        }
+        if (productCount > 0 && (food.length == 0 || gram.length == 0)) { // Эта проверка дублирует предыдущую, можно упростить
+             throw new BadRequestException("Массивы 'food' и 'gram' не могут быть пустыми, если 'productCount' > 0.");
+        }
+        for (int i = 0; i < productCount; i++) {
+            if (food[i] == null || food[i].trim().isEmpty()) {
+                throw new BadRequestException("Название продукта (food) по индексу " + i + " не может быть пустым.");
+            }
+            if (gram[i] == null || gram[i] <= 0) {
+                throw new BadRequestException("Вес продукта (gram) для '" + food[i] + "' должен быть указан и быть положительным числом.");
             }
         }
         return ResponseEntity.ok(caloriesService.calculateCalories(productCount, food, gram));
@@ -68,20 +87,18 @@ public class ProductController {
 
     @Operation(summary = "Создать новый продукт")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "Продукт успешно создан",
-                    content = @Content(mediaType = "application/json", schema = @Schema(type = "string"))),
-            @ApiResponse(responseCode = "400", description = "Некорректные данные продукта (имя, калории)", ref = "#/components/responses/BadRequest"),
-            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера", ref = "#/components/responses/InternalServerError")
+            @ApiResponse(responseCode = "201", description = "Продукт успешно создан"),
+            @ApiResponse(responseCode = "400", description = "Некорректные данные продукта (имя, калории)", ref = "#/components/responses/BadRequest")
     })
     @PostMapping("/create")
     public ResponseEntity<String> createProduct(
             @Parameter(description = "Название продукта", required = true, example = "Apple") @RequestParam String name,
             @Parameter(description = "Калорийность на 100г", required = true, example = "52") @RequestParam Integer caloriesPer100g) {
         if (name == null || name.trim().isEmpty()) {
-            throw new BadRequestException("Product name cannot be empty."); 
+            throw new BadRequestException("Параметр 'name' не может быть пустым.");
         }
-        if (caloriesPer100g < 0) {
-            throw new BadRequestException("Calories per 100g cannot be negative."); 
+        if (caloriesPer100g == null || caloriesPer100g < 0) {
+            throw new BadRequestException("Параметр 'caloriesPer100g' должен быть указан и не может быть отрицательным.");
         }
         String message = productService.createProduct(name, caloriesPer100g);
         return ResponseEntity.status(HttpStatus.CREATED).body(message);
@@ -89,10 +106,8 @@ public class ProductController {
 
     @Operation(summary = "Получить продукт по ID")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Продукт найден",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = Product.class))),
-            @ApiResponse(responseCode = "404", description = "Продукт не найден", ref = "#/components/responses/NotFound"),
-            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера", ref = "#/components/responses/InternalServerError")
+            @ApiResponse(responseCode = "200", description = "Продукт найден"),
+            @ApiResponse(responseCode = "404", description = "Продукт не найден", ref = "#/components/responses/NotFound")
     })
     @GetMapping("/{id}")
     public ResponseEntity<Product> getProduct(
@@ -102,11 +117,9 @@ public class ProductController {
 
     @Operation(summary = "Обновить существующий продукт")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Продукт успешно обновлен",
-                    content = @Content(mediaType = "application/json", schema = @Schema(type = "string"))),
+            @ApiResponse(responseCode = "200", description = "Продукт успешно обновлен"),
             @ApiResponse(responseCode = "400", description = "Некорректные данные для обновления", ref = "#/components/responses/BadRequest"),
-            @ApiResponse(responseCode = "404", description = "Продукт для обновления не найден", ref = "#/components/responses/NotFound"),
-            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера", ref = "#/components/responses/InternalServerError")
+            @ApiResponse(responseCode = "404", description = "Продукт для обновления не найден", ref = "#/components/responses/NotFound")
     })
     @PutMapping("/update/{id}")
     public ResponseEntity<String> updateProduct(
@@ -114,20 +127,18 @@ public class ProductController {
             @Parameter(description = "Новое название продукта", required = true, example = "Green Apple") @RequestParam String name,
             @Parameter(description = "Новая калорийность на 100г", required = true, example = "55") @RequestParam Integer caloriesPer100g) {
         if (name == null || name.trim().isEmpty()) {
-            throw new BadRequestException("Product name cannot be empty."); 
+            throw new BadRequestException("Параметр 'name' не может быть пустым.");
         }
-        if (caloriesPer100g < 0) {
-            throw new BadRequestException("Calories per 100g cannot be negative."); 
+        if (caloriesPer100g == null || caloriesPer100g < 0) {
+            throw new BadRequestException("Параметр 'caloriesPer100g' должен быть указан и не может быть отрицательным.");
         }
         return ResponseEntity.ok(productService.updateProduct(id, name, caloriesPer100g));
     }
 
     @Operation(summary = "Удалить продукт по ID")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Продукт успешно удален",
-                    content = @Content(mediaType = "application/json", schema = @Schema(type = "string"))),
-            @ApiResponse(responseCode = "404", description = "Продукт для удаления не найден", ref = "#/components/responses/NotFound"),
-            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера", ref = "#/components/responses/InternalServerError")
+            @ApiResponse(responseCode = "200", description = "Продукт успешно удален"),
+            @ApiResponse(responseCode = "404", description = "Продукт для удаления не найден", ref = "#/components/responses/NotFound")
     })
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<String> deleteProduct(
@@ -137,9 +148,7 @@ public class ProductController {
 
     @Operation(summary = "Получить все продукты")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Список всех продуктов",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = List.class, subTypes = {Product.class}))),
-            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера", ref = "#/components/responses/InternalServerError")
+            @ApiResponse(responseCode = "200", description = "Список всех продуктов")
     })
     @GetMapping("/")
     public ResponseEntity<List<Product>> getAllProducts() {

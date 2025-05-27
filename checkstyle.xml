@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE module SYSTEM "config/checkstyle/configuration_1_3.dtd">
+
+<module name="Checker">
+    <property name="charset" value="UTF-8"/>
+    <property name="severity" value="warning"/>
+    <property name="fileExtensions" value="java, properties, xml"/>
+
+    <module name="SuppressWarningsFilter"/>
+
+    <module name="SuppressionFilter">
+        <property name="file" value="checkstyle-suppressions.xml"/>
+        <property name="optional" value="true"/>
+    </module>
+
+    <module name="LineLength">
+        <property name="fileExtensions" value="java"/>
+        <property name="max" value="120"/>
+        <property name="ignorePattern"
+                  value="^(package|import).*|a href|href|https?://|ftp://|.*@Value.*|.*@Query.*"/>
+    </module>
+
+    <module name="Indentation">
+        <property name="basicOffset" value="4"/>
+        <property name="braceAdjustment" value="0"/>
+        <property name="caseIndent" value="4"/>
+        <property name="throwsIndent" value="4"/>
+        <property name="lineWrappingIndentation" value="4"/>
+    </module>
+
+    <module name="TreeWalker">
+        <module name="TypeName">
+            <property name="format" value="^[A-Z][a-zA-Z0-9]*$"/>
+        </module>
+
+        <module name="MethodName">
+            <property name="format" value="^[a-z][a-zA-Z0-9]*$"/>
+        </module>
+
+        <module name="MemberName">
+            <property name="format" value="^[a-z][a-zA-Z0-9]*$"/>
+        </module>
+
+        <module name="ConstantName">
+            <property name="format" value="^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$"/>
+        </module>
+
+        <module name="CyclomaticComplexity">
+            <property name="max" value="10"/>
+        </module>
+
+        <module name="BooleanExpressionComplexity">
+            <property name="max" value="5"/>
+        </module>
+
+        <module name="ClassFanOutComplexity">
+            <property name="max" value="20"/>
+        </module>
+
+        <module name="MagicNumber">
+            <property name="ignoreNumbers" value="-1,0,1,2,3"/>
+            <property name="ignoreAnnotation" value="true"/>
+        </module>
+
+        <module name="JavadocMethod">
+            <property name="scope" value="public"/>
+            <property name="allowMissingParamTags" value="true"/>
+            <property name="allowMissingReturnTag" value="true"/>
+        </module>
+
+        <module name="JavadocType">
+            <property name="scope" value="public"/>
+        </module>
+
+        <module name="UnusedImports"/>
+
+        <module name="ModifierOrder"/>
+
+        <module name="WhitespaceAround">
+            <property name="tokens"
+                      value="ASSIGN, PLUS, MINUS, STAR, DIV, MOD, LPAREN, RPAREN, LCURLY, RCURLY, SEMI, COMMA, DOT"/>
+        </module>
+
+        <module name="NeedBraces"/>
+
+        <module name="AnnotationUseStyle">
+            <property name="elementNameFormat" value="^[A-Z][a-zA-Z0-9]*$"/>
+            <property name="closingParens" value="always"/>
+        </module>
+    </module>
+
+    <module name="BeforeExecutionExclusionFileFilter">
+        <property name="fileNamePattern" value="module-info\.java$|Application\.java$"/>
+    </module>
+</module>
