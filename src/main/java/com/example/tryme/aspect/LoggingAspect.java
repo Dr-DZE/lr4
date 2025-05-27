@@ -1,4 +1,4 @@
-package com.example.tryme.aspect; // Убедитесь, что пакет правильный
+package com.example.tryme.aspect; 
 
 import java.util.Arrays;
 
@@ -24,11 +24,11 @@ public class LoggingAspect {
     public void serviceMethods() {
     }
 
-    @Pointcut("within(com.example.tryme.Controller..*)") // Убедитесь, что путь к контроллерам правильный
+    @Pointcut("within(com.example.tryme.Controller..*)") 
     public void controllerMethods() {
     }
 
-    @Pointcut("within(com.example.tryme.Repository..*)") // Убедитесь, что путь к репозиториям правильный
+    @Pointcut("within(com.example.tryme.Repository..*)") 
     public void repositoryMethods() {
     }
 

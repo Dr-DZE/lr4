@@ -83,7 +83,7 @@ public class CaloriesService {
         Integer[] caloriesIn100 = new Integer[productCount];
         Integer totalCalories = 0;
 
-        // Используем конструктор Meal(String name)
+      
         Meal meal = new Meal("Meal created on " + new Date().toString());
         mealRepository.save(meal);
 
@@ -105,7 +105,7 @@ public class CaloriesService {
                 throw new ResourceNotFoundException("Product " + food[i] + " could not be processed and saved.");
             }
             Product product = products.get(0);
-            // Используем конструктор MealProduct(Integer grams, Meal meal, Product product)
+         
             MealProduct mealProduct = new MealProduct(gram[i], meal, product);
             mealProductRepository.save(mealProduct);
         }
@@ -180,7 +180,7 @@ public class CaloriesService {
         }
         Product product = products.get(0);
 
-        // Используем конструктор MealProduct(Integer grams, Meal meal, Product product)
+       
         MealProduct mealProduct = new MealProduct(grams, meal, product);
         mealProductRepository.save(mealProduct);
 

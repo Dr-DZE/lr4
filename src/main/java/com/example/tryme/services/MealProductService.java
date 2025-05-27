@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 import com.example.tryme.Model.Meal;
 import com.example.tryme.Model.MealProduct;
 import com.example.tryme.Model.Product;
-import com.example.tryme.Repository.MealProductRepository; // Добавлен Autowired если он нужен для конструктора
+import com.example.tryme.Repository.MealProductRepository; 
 import com.example.tryme.exception.ResourceNotFoundException;
 
 @Service
@@ -16,20 +16,20 @@ public class MealProductService {
     private final MealProductRepository mealProductRepository;
     private final CacheService cacheService;
 
-    @Autowired // Убедитесь, что эта аннотация есть, если используете конструктор для DI
+    @Autowired
     public MealProductService(MealProductRepository mealProductRepository, CacheService cacheService) {
         this.mealProductRepository = mealProductRepository;
         this.cacheService = cacheService;
     }
 
-    // Исправленная сигнатура: добавлен productId
+  
     public String createMealProduct(Integer grams, Long mealId, Long productId,
                                     MealService mealService, ProductService productService) {
         cacheService.clearCache("mealProducts");
         
-        // Используем mealId и productId для получения Meal и Product
+       
         Meal meal = mealService.getMeal(mealId);
-        Product product = productService.getProduct(productId); // productId теперь доступен
+        Product product = productService.getProduct(productId);
         
         MealProduct mealProduct = new MealProduct(grams, meal, product);
         mealProductRepository.save(mealProduct);

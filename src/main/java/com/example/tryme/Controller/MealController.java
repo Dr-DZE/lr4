@@ -2,17 +2,6 @@ package com.example.tryme.Controller;
 
 import java.util.List;
 
-import com.example.tryme.Model.Meal;
-import com.example.tryme.services.MealService;
-// Исправленный импорт
-import com.example.tryme.exception.BadRequestException; 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +13,18 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.example.tryme.Model.Meal;
+import com.example.tryme.exception.BadRequestException;
+import com.example.tryme.services.MealService;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 
 @RestController
@@ -48,7 +49,7 @@ public class MealController {
     public ResponseEntity<List<Meal>> getMealsByProduct(
             @Parameter(description = "Название продукта для поиска", required = true, example = "Chicken") @RequestParam String productName) {
         if (productName == null || productName.trim().isEmpty()) {
-            throw new BadRequestException("Product name cannot be empty."); // Используем исправленный импорт
+            throw new BadRequestException("Product name cannot be empty."); 
         }
         return ResponseEntity.ok(mealService.findMealsByProductName(productName));
     }
@@ -64,7 +65,7 @@ public class MealController {
     public ResponseEntity<String> createMeal(
             @Parameter(description = "Название нового блюда", required = true, example = "Pasta Carbonara") @RequestParam String mealName) {
         if (mealName == null || mealName.trim().isEmpty()) {
-            throw new BadRequestException("Meal name cannot be empty."); // Используем исправленный импорт
+            throw new BadRequestException("Meal name cannot be empty.");
         }
         String message = mealService.createMeal(mealName);
         return ResponseEntity.status(HttpStatus.CREATED).body(message);
@@ -96,7 +97,7 @@ public class MealController {
             @Parameter(description = "ID блюда для обновления", required = true, example = "1") @PathVariable Long id,
             @Parameter(description = "Новое название блюда", required = true, example = "Spaghetti Bolognese") @RequestParam String newName) {
         if (newName == null || newName.trim().isEmpty()) {
-            throw new BadRequestException("New meal name cannot be empty."); // Используем исправленный импорт
+            throw new BadRequestException("New meal name cannot be empty."); 
         }
         return ResponseEntity.ok(mealService.updateMeal(id, newName));
     }

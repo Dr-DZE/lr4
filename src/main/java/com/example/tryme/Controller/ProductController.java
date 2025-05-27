@@ -2,18 +2,6 @@ package com.example.tryme.Controller;
 
 import java.util.List;
 
-import com.example.tryme.Model.Product;
-import com.example.tryme.services.CaloriesService;
-import com.example.tryme.services.ProductService;
-// Исправленный импорт
-import com.example.tryme.exception.BadRequestException; 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +13,19 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.example.tryme.Model.Product;
+import com.example.tryme.exception.BadRequestException;
+import com.example.tryme.services.CaloriesService;
+import com.example.tryme.services.ProductService;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 
 @RestController
@@ -55,11 +56,11 @@ public class ProductController {
             @Parameter(description = "Массив названий продуктов", required = true, example = "[\"Chicken Breast\", \"Broccoli\"]") @RequestParam String[] food,
             @Parameter(description = "Массив веса продуктов в граммах", required = true, example = "[150, 100]") @RequestParam Integer[] gram) {
         if (productCount <= 0 || food.length != productCount || gram.length != productCount) {
-            throw new BadRequestException("Product count must match the length of food and gram arrays and be positive."); // Исправлено
+            throw new BadRequestException("Product count must match the length of food and gram arrays and be positive."); 
         }
         for (Integer g : gram) {
             if (g <= 0) {
-                throw new BadRequestException("Grams for each food item must be positive."); // Исправлено
+                throw new BadRequestException("Grams for each food item must be positive."); 
             }
         }
         return ResponseEntity.ok(caloriesService.calculateCalories(productCount, food, gram));
@@ -77,10 +78,10 @@ public class ProductController {
             @Parameter(description = "Название продукта", required = true, example = "Apple") @RequestParam String name,
             @Parameter(description = "Калорийность на 100г", required = true, example = "52") @RequestParam Integer caloriesPer100g) {
         if (name == null || name.trim().isEmpty()) {
-            throw new BadRequestException("Product name cannot be empty."); // Исправлено
+            throw new BadRequestException("Product name cannot be empty."); 
         }
         if (caloriesPer100g < 0) {
-            throw new BadRequestException("Calories per 100g cannot be negative."); // Исправлено
+            throw new BadRequestException("Calories per 100g cannot be negative."); 
         }
         String message = productService.createProduct(name, caloriesPer100g);
         return ResponseEntity.status(HttpStatus.CREATED).body(message);
@@ -113,10 +114,10 @@ public class ProductController {
             @Parameter(description = "Новое название продукта", required = true, example = "Green Apple") @RequestParam String name,
             @Parameter(description = "Новая калорийность на 100г", required = true, example = "55") @RequestParam Integer caloriesPer100g) {
         if (name == null || name.trim().isEmpty()) {
-            throw new BadRequestException("Product name cannot be empty."); // Исправлено
+            throw new BadRequestException("Product name cannot be empty."); 
         }
         if (caloriesPer100g < 0) {
-            throw new BadRequestException("Calories per 100g cannot be negative."); // Исправлено
+            throw new BadRequestException("Calories per 100g cannot be negative."); 
         }
         return ResponseEntity.ok(productService.updateProduct(id, name, caloriesPer100g));
     }

@@ -58,11 +58,11 @@ public class MealProductController {
     public ResponseEntity<String> createMealProduct(
             @Parameter(description = "Вес продукта в граммах", required = true, example = "150") @RequestParam Integer grams,
             @Parameter(description = "ID блюда", required = true, example = "1") @RequestParam Long mealId,
-            @Parameter(description = "ID продукта", required = true, example = "1") @RequestParam Long productId) { // productId здесь!
+            @Parameter(description = "ID продукта", required = true, example = "1") @RequestParam Long productId) { 
         if (grams <= 0) {
             throw new BadRequestException("Grams must be a positive value.");
         }
-        // Вызов сервисного метода с правильным набором аргументов
+        
         String message = mealProductService.createMealProduct(grams, mealId, productId, mealService, productService);
         return ResponseEntity.status(HttpStatus.CREATED).body(message);
     }

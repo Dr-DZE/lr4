@@ -23,10 +23,10 @@ public class Meal {
     @JsonManagedReference
     private List<MealProduct> products;
 
-    // Конструктор по умолчанию для JPA
+    
     public Meal() {}
 
-    // Конструктор для создания Meal с именем
+  
     public Meal(String name) {
         this.name = name;
     }

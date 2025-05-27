@@ -19,18 +19,18 @@ public class MealProduct {
 
     @ManyToOne
     @JoinColumn(name = "meal_id")
-    @JsonBackReference //value = "meal-mealProduct" можно убрать если нет конфликтов
+    @JsonBackReference 
     private Meal meal;
 
     @ManyToOne
     @JoinColumn(name = "product_id")
-    @JsonBackReference //value = "product-mealProduct" можно убрать
+    @JsonBackReference 
     private Product product;
 
-    // Конструктор по умолчанию для JPA
+   
     public MealProduct() {}
 
-    // Конструктор для создания MealProduct с параметрами
+  
     public MealProduct(Integer grams, Meal meal, Product product) {
         this.grams = grams;
         this.meal = meal;
