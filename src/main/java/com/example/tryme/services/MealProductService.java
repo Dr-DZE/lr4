@@ -2,26 +2,34 @@ package com.example.tryme.services;
 
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.example.tryme.Model.Meal;
 import com.example.tryme.Model.MealProduct;
-import com.example.tryme.Repository.MealProductRepository;
+import com.example.tryme.Model.Product;
+import com.example.tryme.Repository.MealProductRepository; // Добавлен Autowired если он нужен для конструктора
+import com.example.tryme.exception.ResourceNotFoundException;
 
 @Service
 public class MealProductService {
     private final MealProductRepository mealProductRepository;
     private final CacheService cacheService;
 
+    @Autowired // Убедитесь, что эта аннотация есть, если используете конструктор для DI
     public MealProductService(MealProductRepository mealProductRepository, CacheService cacheService) {
         this.mealProductRepository = mealProductRepository;
         this.cacheService = cacheService;
     }
 
-    public String createMealProduct(Integer grams, Long mealId, Long productId, 
-                                  MealService mealService, ProductService productService) {
+    // Исправленная сигнатура: добавлен productId
+    public String createMealProduct(Integer grams, Long mealId, Long productId,
+                                    MealService mealService, ProductService productService) {
         cacheService.clearCache("mealProducts");
-        var meal = mealService.getMeal(mealId);
-        var product = productService.getProduct(productId);
+        
+        // Используем mealId и productId для получения Meal и Product
+        Meal meal = mealService.getMeal(mealId);
+        Product product = productService.getProduct(productId); // productId теперь доступен
         
         MealProduct mealProduct = new MealProduct(grams, meal, product);
         mealProductRepository.save(mealProduct);
@@ -29,20 +37,21 @@ public class MealProductService {
     }
 
     public MealProduct getMealProduct(Long id) {
-        List<MealProduct> cachedMealProducts = cacheService.getFromCache("mealProducts", "id:" + id);
-        if (cachedMealProducts != null && !cachedMealProducts.isEmpty()) {
-            return cachedMealProducts.get(0);
+        String cacheKey = "id:" + id;
+        List<MealProduct> cachedMealProductsList = cacheService.getFromCache("mealProducts", cacheKey);
+        if (cachedMealProductsList != null && !cachedMealProductsList.isEmpty()) {
+            return cachedMealProductsList.get(0);
         }
         MealProduct mealProduct = mealProductRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("MealProduct not found"));
-        cacheService.putToCache("mealProducts", "id:" + id, List.of(mealProduct));
+                .orElseThrow(() -> new ResourceNotFoundException("MealProduct not found with id: " + id));
+        cacheService.putToCache("mealProducts", cacheKey, List.of(mealProduct));
         return mealProduct;
     }
 
     public String updateMealProduct(Long id, Integer grams) {
         cacheService.clearCache("mealProducts");
         MealProduct mealProduct = mealProductRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("MealProduct not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("MealProduct not found with id: " + id + " for update."));
         mealProduct.setGrams(grams);
         mealProductRepository.save(mealProduct);
         return "MealProduct updated";
@@ -51,7 +60,7 @@ public class MealProductService {
     public String deleteMealProduct(Long id) {
         cacheService.clearCache("mealProducts");
         MealProduct mealProduct = mealProductRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("MealProduct not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("MealProduct not found with id: " + id + " for deletion."));
         mealProductRepository.delete(mealProduct);
         return "MealProduct deleted";
     }

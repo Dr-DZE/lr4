@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 
 import com.example.tryme.Model.Meal;
 import com.example.tryme.Repository.MealRepository;
+import com.example.tryme.exception.ResourceNotFoundException;
 
 @Service
 public class MealService {
@@ -18,46 +19,49 @@ public class MealService {
     }
 
     public List<Meal> findMealsByProductName(String productName) {
-        List<Meal> cachedMeals = cacheService.getFromCache("meals", productName);
+        String cacheKey = "productName:" + productName;
+        List<Meal> cachedMeals = cacheService.getFromCache("meals", cacheKey);
         if (cachedMeals != null) {
             return cachedMeals;
         }
         List<Meal> meals = mealRepository.findMealsByProductName(productName);
-        cacheService.putToCache("meals", productName, meals);
+        cacheService.putToCache("meals", cacheKey, meals);
         return meals;
     }
 
     public String createMeal(String mealName) {
-        cacheService.clearCache("meals");
-        Meal meal = new Meal(mealName);
+        cacheService.clearCache("meals"); 
+        // Используем конструктор Meal(String name)
+        Meal meal = new Meal(mealName); 
         mealRepository.save(meal);
         return "Meal '" + mealName + "' created with ID: " + meal.getId();
     }
 
     public Meal getMeal(Long id) {
-        List<Meal> cachedMeals = cacheService.getFromCache("meals", "id:" + id);
-        if (cachedMeals != null && !cachedMeals.isEmpty()) {
-            return cachedMeals.get(0);
+        String cacheKey = "id:" + id;
+        List<Meal> cachedMealsList = cacheService.getFromCache("meals", cacheKey);
+        if (cachedMealsList != null && !cachedMealsList.isEmpty()) {
+            return cachedMealsList.get(0);
         }
         Meal meal = mealRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Meal not found"));
-        cacheService.putToCache("meals", "id:" + id, List.of(meal));
+                .orElseThrow(() -> new ResourceNotFoundException("Meal not found with id: " + id));
+        cacheService.putToCache("meals", cacheKey, List.of(meal));
         return meal;
     }
 
     public String updateMeal(Long id, String newName) {
-        cacheService.clearCache("meals");
+        cacheService.clearCache("meals"); 
         Meal meal = mealRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Meal not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Meal not found with id: " + id + " for update."));
         meal.setName(newName);
         mealRepository.save(meal);
         return "Meal updated to '" + newName + "'";
     }
 
     public String deleteMeal(Long id) {
-        cacheService.clearCache("meals");
+        cacheService.clearCache("meals"); 
         Meal meal = mealRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Meal not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Meal not found with id: " + id + " for deletion."));
         mealRepository.delete(meal);
         return "Meal deleted";
     }

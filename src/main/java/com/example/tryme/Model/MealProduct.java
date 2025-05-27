@@ -19,22 +19,25 @@ public class MealProduct {
 
     @ManyToOne
     @JoinColumn(name = "meal_id")
-    @JsonBackReference(value = "meal-mealProduct")
+    @JsonBackReference //value = "meal-mealProduct" можно убрать если нет конфликтов
     private Meal meal;
 
     @ManyToOne
     @JoinColumn(name = "product_id")
-    @JsonBackReference(value = "product-mealProduct")
+    @JsonBackReference //value = "product-mealProduct" можно убрать
     private Product product;
 
+    // Конструктор по умолчанию для JPA
     public MealProduct() {}
 
+    // Конструктор для создания MealProduct с параметрами
     public MealProduct(Integer grams, Meal meal, Product product) {
         this.grams = grams;
         this.meal = meal;
         this.product = product;
     }
 
+    // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public Integer getGrams() { return grams; }

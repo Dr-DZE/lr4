@@ -2,7 +2,21 @@ package com.example.tryme.Controller;
 
 import java.util.List;
 
+import com.example.tryme.Model.Product;
+import com.example.tryme.services.CaloriesService;
+import com.example.tryme.services.ProductService;
+// Исправленный импорт
+import com.example.tryme.exception.BadRequestException; 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -12,55 +26,122 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.tryme.Model.Product;
-import com.example.tryme.services.CaloriesService;
-import com.example.tryme.services.ProductService;
 
 @RestController
 @RequestMapping("/products")
+@Tag(name = "Product API", description = "API для управления продуктами и расчета калорий")
 public class ProductController {
     private final ProductService productService;
     private final CaloriesService caloriesService;
 
     @Autowired
-    public ProductController(ProductService productService, 
-                           CaloriesService caloriesService) {
+    public ProductController(ProductService productService,
+                             CaloriesService caloriesService) {
         this.productService = productService;
         this.caloriesService = caloriesService;
     }
 
+    @Operation(summary = "Рассчитать калории для набора продуктов",
+            description = "Рассчитывает общую калорийность на основе списка продуктов и их веса. Также добавляет продукты в базу данных, если их там нет.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Расчет калорий выполнен",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = List.class, subTypes = {String.class}))),
+            @ApiResponse(responseCode = "400", description = "Некорректные входные данные (например, количество продуктов не соответствует массивам)", ref = "#/components/responses/BadRequest"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера", ref = "#/components/responses/InternalServerError")
+    })
     @GetMapping("/CalculateCalories")
-    public List<String> calculateCalories(
-            @RequestParam Integer productCount,
-            @RequestParam String[] food,
-            @RequestParam Integer[] gram) {
-        return caloriesService.calculateCalories(productCount, food, gram);
+    public ResponseEntity<List<String>> calculateCalories(
+            @Parameter(description = "Количество продуктов для расчета", required = true, example = "2") @RequestParam Integer productCount,
+            @Parameter(description = "Массив названий продуктов", required = true, example = "[\"Chicken Breast\", \"Broccoli\"]") @RequestParam String[] food,
+            @Parameter(description = "Массив веса продуктов в граммах", required = true, example = "[150, 100]") @RequestParam Integer[] gram) {
+        if (productCount <= 0 || food.length != productCount || gram.length != productCount) {
+            throw new BadRequestException("Product count must match the length of food and gram arrays and be positive."); // Исправлено
+        }
+        for (Integer g : gram) {
+            if (g <= 0) {
+                throw new BadRequestException("Grams for each food item must be positive."); // Исправлено
+            }
+        }
+        return ResponseEntity.ok(caloriesService.calculateCalories(productCount, food, gram));
     }
 
+    @Operation(summary = "Создать новый продукт")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Продукт успешно создан",
+                    content = @Content(mediaType = "application/json", schema = @Schema(type = "string"))),
+            @ApiResponse(responseCode = "400", description = "Некорректные данные продукта (имя, калории)", ref = "#/components/responses/BadRequest"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера", ref = "#/components/responses/InternalServerError")
+    })
     @PostMapping("/create")
-    public String createProduct(@RequestParam String name, @RequestParam Integer caloriesPer100g) {
-        return productService.createProduct(name, caloriesPer100g);
+    public ResponseEntity<String> createProduct(
+            @Parameter(description = "Название продукта", required = true, example = "Apple") @RequestParam String name,
+            @Parameter(description = "Калорийность на 100г", required = true, example = "52") @RequestParam Integer caloriesPer100g) {
+        if (name == null || name.trim().isEmpty()) {
+            throw new BadRequestException("Product name cannot be empty."); // Исправлено
+        }
+        if (caloriesPer100g < 0) {
+            throw new BadRequestException("Calories per 100g cannot be negative."); // Исправлено
+        }
+        String message = productService.createProduct(name, caloriesPer100g);
+        return ResponseEntity.status(HttpStatus.CREATED).body(message);
     }
 
+    @Operation(summary = "Получить продукт по ID")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Продукт найден",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = Product.class))),
+            @ApiResponse(responseCode = "404", description = "Продукт не найден", ref = "#/components/responses/NotFound"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера", ref = "#/components/responses/InternalServerError")
+    })
     @GetMapping("/{id}")
-    public Product getProduct(@PathVariable Long id) {
-        return productService.getProduct(id);
+    public ResponseEntity<Product> getProduct(
+            @Parameter(description = "ID продукта", required = true, example = "1") @PathVariable Long id) {
+        return ResponseEntity.ok(productService.getProduct(id));
     }
 
+    @Operation(summary = "Обновить существующий продукт")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Продукт успешно обновлен",
+                    content = @Content(mediaType = "application/json", schema = @Schema(type = "string"))),
+            @ApiResponse(responseCode = "400", description = "Некорректные данные для обновления", ref = "#/components/responses/BadRequest"),
+            @ApiResponse(responseCode = "404", description = "Продукт для обновления не найден", ref = "#/components/responses/NotFound"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера", ref = "#/components/responses/InternalServerError")
+    })
     @PutMapping("/update/{id}")
-    public String updateProduct(@PathVariable Long id, 
-                               @RequestParam String name, 
-                               @RequestParam Integer caloriesPer100g) {
-        return productService.updateProduct(id, name, caloriesPer100g);
+    public ResponseEntity<String> updateProduct(
+            @Parameter(description = "ID продукта для обновления", required = true, example = "1") @PathVariable Long id,
+            @Parameter(description = "Новое название продукта", required = true, example = "Green Apple") @RequestParam String name,
+            @Parameter(description = "Новая калорийность на 100г", required = true, example = "55") @RequestParam Integer caloriesPer100g) {
+        if (name == null || name.trim().isEmpty()) {
+            throw new BadRequestException("Product name cannot be empty."); // Исправлено
+        }
+        if (caloriesPer100g < 0) {
+            throw new BadRequestException("Calories per 100g cannot be negative."); // Исправлено
+        }
+        return ResponseEntity.ok(productService.updateProduct(id, name, caloriesPer100g));
     }
 
+    @Operation(summary = "Удалить продукт по ID")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Продукт успешно удален",
+                    content = @Content(mediaType = "application/json", schema = @Schema(type = "string"))),
+            @ApiResponse(responseCode = "404", description = "Продукт для удаления не найден", ref = "#/components/responses/NotFound"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера", ref = "#/components/responses/InternalServerError")
+    })
     @DeleteMapping("/delete/{id}")
-    public String deleteProduct(@PathVariable Long id) {
-        return productService.deleteProduct(id);
+    public ResponseEntity<String> deleteProduct(
+            @Parameter(description = "ID продукта для удаления", required = true, example = "1") @PathVariable Long id) {
+        return ResponseEntity.ok(productService.deleteProduct(id));
     }
 
+    @Operation(summary = "Получить все продукты")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Список всех продуктов",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = List.class, subTypes = {Product.class}))),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера", ref = "#/components/responses/InternalServerError")
+    })
     @GetMapping("/")
-    public List<Product> getAllProducts() {
-        return productService.getAllProducts();
+    public ResponseEntity<List<Product>> getAllProducts() {
+        return ResponseEntity.ok(productService.getAllProducts());
     }
 }
