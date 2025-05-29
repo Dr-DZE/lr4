@@ -31,7 +31,6 @@ public class MealService {
 
     public String createMeal(String mealName) {
         cacheService.clearCache("meals"); 
-        // Используем конструктор Meal(String name)
         Meal meal = new Meal(mealName); 
         mealRepository.save(meal);
         return "Meal '" + mealName + "' created with ID: " + meal.getId();

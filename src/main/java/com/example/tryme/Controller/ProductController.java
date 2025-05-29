@@ -71,7 +71,7 @@ public class ProductController {
         if (food.length != productCount || gram.length != productCount) {
              throw new BadRequestException("Длины массивов 'food' и 'gram' должны соответствовать значению 'productCount'.");
         }
-        if (productCount > 0 && (food.length == 0 || gram.length == 0)) { // Эта проверка дублирует предыдущую, можно упростить
+        if (productCount > 0 && (food.length == 0 || gram.length == 0)) { 
              throw new BadRequestException("Массивы 'food' и 'gram' не могут быть пустыми, если 'productCount' > 0.");
         }
         for (int i = 0; i < productCount; i++) {

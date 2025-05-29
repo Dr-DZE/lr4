@@ -2,11 +2,11 @@ package com.example.tryme.services;
 
 import java.util.List;
 
+import org.springframework.stereotype.Service;
+
 import com.example.tryme.Model.Product;
 import com.example.tryme.Repository.ProductRepository;
-// Исправленный импорт
-import com.example.tryme.exception.ResourceNotFoundException; 
-import org.springframework.stereotype.Service;
+import com.example.tryme.exception.ResourceNotFoundException;
 
 @Service
 public class ProductService {
