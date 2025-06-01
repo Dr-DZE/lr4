@@ -35,7 +35,7 @@ public class GlobalExceptionHandler {
     private Map<String, Object> createErrorBody(HttpStatus status, String error, Object message, WebRequest request) {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("timestamp", new Date());
-        body.put("status", status.value());
+        // body.put("status", status.value());
         body.put("error", error);
         body.put("message", message);
         body.put("path", request.getDescription(false).replace("uri=", ""));
