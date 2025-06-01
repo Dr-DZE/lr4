@@ -46,6 +46,12 @@ public class ProductController {
             @ApiResponse(responseCode = "200", description = "Расчет калорий выполнен"),
             @ApiResponse(responseCode = "400", description = "Некорректные входные данные", ref = "#/components/responses/BadRequest")
     })
+
+    @GetMapping("/force500")
+    public ResponseEntity<String> forceInternalServerError() {
+        throw new RuntimeException("Пример 500 ошибки");
+    }
+
     @GetMapping("/CalculateCalories")
     public ResponseEntity<List<String>> calculateCalories(
             @Parameter(description = "Количество продуктов для расчета.", example = "2")

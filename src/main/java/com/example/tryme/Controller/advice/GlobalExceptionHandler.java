@@ -1,5 +1,6 @@
 package com.example.tryme.Controller.advice;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException; 
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
@@ -102,13 +104,15 @@ public class GlobalExceptionHandler {
         Map<String, Object> body = createErrorBody(HttpStatus.BAD_REQUEST, "Validation Error", errors, request);
         return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
     }
-
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<Object> handleGlobalException(
-            Exception ex, WebRequest request) {
-        logger.error("Internal server error: {} at path {}", ex.getMessage(), request.getDescription(false), ex);
-        Map<String, Object> body = createErrorBody(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error",
-                "An unexpected error occurred. Please try again later.", request);
+    
+        @ExceptionHandler(Exception.class)
+    public ResponseEntity<Object> handleAllExceptions(Exception ex, WebRequest request) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value()); 
+        body.put("error", "An unexpected error occurred. Please try again later.");
+        body.put("message", ex.getMessage());
+        body.put("path", ((ServletWebRequest)request).getRequest().getRequestURI());
         return new ResponseEntity<>(body, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }
